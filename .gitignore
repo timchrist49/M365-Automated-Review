@@ -1,0 +1,39 @@
+# Environment
+.env
+*.env
+
+# Certificates — NEVER commit private keys
+certs/*.pfx
+certs/*.pem
+certs/*.key
+certs/*.cer
+!certs/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+dist/
+htmlcov/
+.coverage
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Temp audit output
+/tmp/monkey365/
+
+# SQLite database
+*.db
+*.sqlite3
+
+# IDE
+.idea/
+.vscode/
+*.swp
