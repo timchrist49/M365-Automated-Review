@@ -1,0 +1,27 @@
+FROM python:3.11-slim
+
+# Install PowerShell 7
+RUN apt-get update && apt-get install -y \
+    wget \
+    apt-transport-https \
+    software-properties-common \
+    curl \
+    && wget -q "https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb" \
+    && dpkg -i packages-microsoft-prod.deb \
+    && rm packages-microsoft-prod.deb \
+    && apt-get update \
+    && apt-get install -y powershell \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install Monkey365 PowerShell module
+RUN pwsh -Command "Install-Module -Name monkey365 -Scope AllUsers -Force -AcceptLicense"
+
+COPY . .
+
+EXPOSE 8000
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
