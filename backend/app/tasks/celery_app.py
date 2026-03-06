@@ -1,2 +1,20 @@
 from celery import Celery
-celery_app = Celery("m365_audit", broker="redis://localhost:6379/0")
+from app.config import settings
+
+celery_app = Celery(
+    "m365_audit",
+    broker=settings.REDIS_URL,
+    backend=settings.REDIS_URL,
+    include=["app.tasks.audit_task"],
+)
+
+celery_app.conf.update(
+    task_serializer="json",
+    accept_content=["json"],
+    result_serializer="json",
+    timezone="UTC",
+    enable_utc=True,
+    task_time_limit=2700,        # 45 minutes hard limit
+    task_soft_time_limit=2400,   # 40 minutes soft limit
+    worker_max_tasks_per_child=1, # Fresh process per audit (memory safety)
+)
