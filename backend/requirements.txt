@@ -15,7 +15,7 @@ openai==1.54.0
 
 # PDF generation
 weasyprint==62.3
-markdown==3.7
+markdown==3.7  # converts Monkey365 findings markdown to HTML for WeasyPrint PDF
 
 # Email
 aiosmtplib==3.0.2

@@ -1,5 +1,6 @@
 FROM python:3.11-slim
 
+# Install PowerShell 7 (same as API image)
 RUN apt-get update && apt-get install -y \
     wget \
     apt-transport-https \
@@ -17,6 +18,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Install Monkey365 PowerShell module
 RUN pwsh -Command "Install-Module -Name monkey365 -Scope AllUsers -Force -AcceptLicense"
 
 COPY . .
