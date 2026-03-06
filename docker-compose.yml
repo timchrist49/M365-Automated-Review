@@ -1,11 +1,14 @@
-version: "3.9"
-
 services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
     networks:
       - internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   api:
     build:
@@ -17,7 +20,8 @@ services:
       - audit_tmp:/tmp/monkey365
       - db_data:/app/data
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     networks:
       - internal
     restart: unless-stopped
@@ -32,7 +36,8 @@ services:
       - audit_tmp:/tmp/monkey365
       - db_data:/app/data
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     networks:
       - internal
     restart: unless-stopped
