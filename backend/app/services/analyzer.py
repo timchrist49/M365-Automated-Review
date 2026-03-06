@@ -113,14 +113,35 @@ def chunk_findings_by_service(raw_data: dict) -> dict:
         if service in raw_data:
             chunks[service] = raw_data[service]
     # Also include any unexpected top-level keys (future-proofing)
+    # Accepts both list (OCSF format) and dict (legacy format)
     for key, value in raw_data.items():
-        if key not in chunks and isinstance(value, dict):
+        if key not in chunks and isinstance(value, (dict, list)):
             chunks[key] = value
     return chunks
 
 
-def build_chunk_prompt(service_name: str, service_data: dict) -> str:
+def build_chunk_prompt(service_name: str, service_data) -> str:
     display_name = SERVICE_DISPLAY_NAMES.get(service_name, service_name)
+
+    # OCSF list format: summarise counts then include full JSON
+    if isinstance(service_data, list):
+        fail_count = sum(1 for f in service_data if f.get("statusCode") == "fail")
+        pass_count = sum(1 for f in service_data if f.get("statusCode") == "pass")
+        manual_count = sum(1 for f in service_data if f.get("statusCode") == "manual")
+        summary = (
+            f"{len(service_data)} findings total: "
+            f"{fail_count} fail, {pass_count} pass, {manual_count} manual review."
+        )
+        data_json = json.dumps(service_data, indent=2)
+        return (
+            f"Analyze the following {display_name} ({service_name}) security findings. "
+            f"Summary: {summary} "
+            f"Include ALL findings — Critical, High, Medium, Low, and Passing. "
+            f"For each failing check, provide specific remediation steps.\n\n"
+            f"Data:\n```json\n{data_json}\n```"
+        )
+
+    # Legacy dict format
     data_json = json.dumps(service_data, indent=2)
     return (
         f"Analyze the following {display_name} ({service_name}) security findings. "

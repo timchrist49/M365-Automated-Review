@@ -40,17 +40,49 @@ Invoke-Monkey365 @param
 """
 
 
+# Monkey365 OCSF provider names → our internal service keys
+_PROVIDER_NAME_MAP = {
+    "EntraID": "EntraId",
+    "Entra ID": "EntraId",
+    "EntraId": "EntraId",
+    "ExchangeOnline": "ExchangeOnline",
+    "SharePointOnline": "SharePointOnline",
+    "MicrosoftTeams": "MicrosoftTeams",
+    "Purview": "Purview",
+    "AdminPortal": "AdminPortal",
+}
+
+
 def parse_monkey365_output(out_dir: str) -> dict:
-    """Find and parse the JSON output file from Monkey365."""
+    """Find and parse the JSON output file from Monkey365.
+
+    Monkey365 v0.9+ outputs OCSF-format JSON as a flat list of findings
+    nested under {out_dir}/{uuid}/json/*.json.  Older versions wrote a
+    dict keyed by service area directly in out_dir.  Both formats are
+    handled: lists are grouped by unmapped.provider; dicts are returned
+    as-is.
+    """
     out_path = Path(out_dir)
-    json_files = list(out_path.glob("*.json"))
+    # Recursive glob covers both flat (*.json) and nested ({uuid}/json/*.json)
+    json_files = list(out_path.glob("**/*.json"))
 
     if not json_files:
         raise FileNotFoundError(f"No JSON output found in {out_dir}")
 
-    # Monkey365 outputs one JSON file — take the first match
     with open(json_files[0], "r", encoding="utf-8") as f:
-        return json.load(f)
+        data = json.load(f)
+
+    # OCSF list format (Monkey365 v0.9+)
+    if isinstance(data, list):
+        grouped: dict = {}
+        for finding in data:
+            raw_provider = finding.get("unmapped", {}).get("provider") or "Unknown"
+            provider = _PROVIDER_NAME_MAP.get(raw_provider, raw_provider)
+            grouped.setdefault(provider, []).append(finding)
+        return grouped
+
+    # Legacy dict format — return as-is
+    return data
 
 
 def run_monkey365(job_id: str, tenant_id: str) -> str:
