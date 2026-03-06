@@ -125,17 +125,15 @@ Microsoft OAuth requires HTTPS for the redirect URI. Choose one of the two optio
 
 ---
 
-### Option A: Cloudflare (Recommended — easiest, no cert management)
+### Option A: Cloudflare (Recommended)
 
-Cloudflare acts as a TLS proxy in front of your server. Your server handles plain HTTP internally — Cloudflare handles the certificate automatically.
+Cloudflare proxies traffic to your server and handles TLS for your clients. You use a **Cloudflare Origin Certificate** to encrypt the Cloudflare→server leg as well, so all traffic is encrypted end-to-end.
 
 #### Step 1: Get your server's public IP
 
 ```bash
 curl -s ifconfig.me
 ```
-
-Note this IP — you'll enter it in Cloudflare shortly.
 
 #### Step 2: Add your domain to Cloudflare (if not already there)
 
@@ -144,7 +142,7 @@ If your domain isn't managed by Cloudflare yet:
 2. Enter your root domain (e.g. `yourcompany.com`) and follow the steps
 3. Cloudflare will show you two nameservers (e.g. `dana.ns.cloudflare.com`)
 4. Log into your domain registrar and update the nameservers to those two values
-5. Wait for propagation — usually 5–30 minutes. You'll get an email from Cloudflare when active.
+5. Wait for propagation — usually 5–30 minutes. You'll receive an email from Cloudflare when active.
 
 If your domain is already on Cloudflare, skip to Step 3.
 
@@ -158,35 +156,139 @@ If your domain is already on Cloudflare, skip to Step 3.
    - **Proxy status:** click the cloud icon so it turns **orange (Proxied)**
 3. Click **Save**
 
-The orange cloud is critical — it means Cloudflare proxies traffic and provides TLS. If it's grey, TLS won't work.
+The orange cloud is critical — it means Cloudflare proxies all traffic. Grey cloud means direct connection only.
 
-#### Step 4: Set the SSL/TLS encryption mode
+#### Step 4: Set the SSL/TLS encryption mode to Full
 
 1. In Cloudflare → your domain → **SSL/TLS** → **Overview**
 2. Set the mode to **Full**
 
-Use **Full** (not Full Strict) because your server has no TLS certificate — Cloudflare terminates TLS externally and forwards plain HTTP to your server on port 80.
+> **Full vs Full Strict:** Both work with a Cloudflare Origin Certificate. "Full" is sufficient and more forgiving. "Full Strict" also works and adds an extra validation layer.
 
-#### Step 5: Open port 80 on your VM firewall
+#### Step 5: Generate a Cloudflare Origin Certificate
 
-Cloudflare connects to your server on port 80:
+This is a free certificate Cloudflare issues for the Cloudflare→origin connection. It is trusted by Cloudflare but not by browsers directly (which is fine — browsers only talk to Cloudflare, not your origin).
+
+1. In Cloudflare → your domain → **SSL/TLS** → **Origin Server**
+2. Click **Create Certificate**
+3. Leave defaults:
+   - Key type: **RSA (2048)**
+   - Hostnames: your domain and wildcard (e.g. `yourcompany.com`, `*.yourcompany.com`)
+   - Validity: **15 years**
+4. Click **Create**
+5. Copy the **Origin Certificate** and **Private Key** — you will only see the private key once
+
+#### Step 6: Save the certificate files on your server
+
+```bash
+mkdir -p /root/m365-audit-platform/nginx/certs
+
+# Paste the Origin Certificate (everything from -----BEGIN CERTIFICATE----- to -----END CERTIFICATE-----)
+nano /root/m365-audit-platform/nginx/certs/origin.crt
+
+# Paste the Private Key (everything from -----BEGIN PRIVATE KEY----- to -----END PRIVATE KEY-----)
+nano /root/m365-audit-platform/nginx/certs/origin.key
+
+# Lock down permissions
+chmod 600 /root/m365-audit-platform/nginx/certs/origin.key
+chmod 644 /root/m365-audit-platform/nginx/certs/origin.crt
+```
+
+#### Step 7: Update nginx/nginx.conf for HTTPS
+
+Replace the entire contents of `nginx/nginx.conf` with the following (replace `audit.yourcompany.com`):
+
+```nginx
+# Redirect HTTP to HTTPS
+server {
+    listen 80;
+    server_name audit.yourcompany.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name audit.yourcompany.com;
+
+    ssl_certificate /etc/nginx/certs/origin.crt;
+    ssl_certificate_key /etc/nginx/certs/origin.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+
+    location /health {
+        proxy_pass http://api:8000/health;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /api/ {
+        proxy_pass http://api:8000/api/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;
+    }
+
+    location /auth/ {
+        proxy_pass http://api:8000/auth/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;
+    }
+
+    location / {
+        proxy_pass http://frontend:80/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+#### Step 8: Mount the certs in Docker Compose
+
+The nginx service in `docker-compose.yml` needs to see the cert files. Add the volume and the 443 port mapping:
+
+```yaml
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro    # add this line
+    ports:
+      - "80:80"
+      - "443:443"                             # add this line
+    depends_on:
+      - api
+      - frontend
+```
+
+#### Step 9: Open firewall ports and restart nginx
 
 ```bash
 ufw allow 80/tcp
-ufw allow 22/tcp   # make sure SSH stays open
+ufw allow 443/tcp
+ufw allow 22/tcp
 ufw enable
+
+cd /root/m365-audit-platform
+docker compose restart nginx
 ```
 
-#### Step 6: Verify it's working
+#### Step 10: Verify
 
-After a minute or two:
 ```bash
-curl -I https://audit.yourcompany.com
-# Should return HTTP 502 (nginx is not running yet) or 200 (if already deployed)
-# The key thing is you get HTTPS — not a connection error
+curl -I https://audit.yourcompany.com/health
+# HTTP/2 200
 ```
 
-Your `nginx/nginx.conf` already listens on port 80. No changes needed there.
+> **Note:** Cloudflare Origin Certificates never expire for 15 years and require no renewal cron job. The only thing to update is if you change domains.
 
 ---
 
