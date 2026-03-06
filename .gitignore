@@ -29,6 +29,11 @@ frontend/.vite/
 # Temp audit output
 /tmp/monkey365/
 
+# Audit output files (if accidentally run outside Docker)
+output/
+reports/
+*.json
+
 # SQLite database
 *.db
 *.sqlite3
