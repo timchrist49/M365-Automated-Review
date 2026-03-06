@@ -32,7 +32,9 @@ frontend/.vite/
 # Audit output files (if accidentally run outside Docker)
 output/
 reports/
-*.json
+# Scope JSON exclusion to audit output directories only (not package.json etc.)
+output/*.json
+reports/*.json
 
 # SQLite database
 *.db
