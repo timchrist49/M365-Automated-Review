@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
 
     # Email
-    SMTP_HOST: str = "smtp.sendgrid.net"
+    SMTP_HOST: str = "smtp.office365.com"
     SMTP_PORT: int = 587
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
