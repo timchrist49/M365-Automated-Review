@@ -1,15 +1,21 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.config import settings
 from app.database import init_db
 from app.routers import audit, auth
 
 app = FastAPI(title="M365 Security Audit Platform", version="1.0.0")
 
+_allowed_origins = (
+    [o.strip() for o in settings.ALLOWED_ORIGINS.split(",") if o.strip()]
+    if settings.ALLOWED_ORIGINS
+    else [settings.APP_BASE_URL]
+)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Tighten in production via env var
+    allow_origins=_allowed_origins,
     allow_methods=["GET", "POST"],
-    allow_headers=["*"],
+    allow_headers=["Content-Type"],
 )
 
 

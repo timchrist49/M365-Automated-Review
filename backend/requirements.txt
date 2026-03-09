@@ -4,21 +4,21 @@ uvicorn[standard]==0.30.6
 
 # Database
 sqlalchemy==2.0.35
-aiosqlite==0.20.0
+psycopg2-binary==2.9.9
 
 # Job queue
 celery==5.4.0
 redis==5.1.0
 
 # OpenAI
-openai==1.54.0
+openai==1.109.1
 
 # PDF generation
-weasyprint==62.3
+weasyprint==68.1
 markdown==3.7  # converts Monkey365 findings markdown to HTML for WeasyPrint PDF
 
-# Email
-aiosmtplib==3.0.2
+# Email via Microsoft Graph API
+msal==1.31.0
 
 # Config
 pydantic-settings==2.5.2

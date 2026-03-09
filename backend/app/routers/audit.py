@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -6,6 +7,7 @@ from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.constants import PENDING_JOB_EXPIRY_MINUTES
 from app.database import get_db
 from app.models import Job, JobStatus
 
@@ -18,6 +20,16 @@ class StartAuditRequest(BaseModel):
     email: EmailStr
     company: str
 
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    def model_post_init(self, __context):
+        # Strip control characters (newlines, carriage returns) that could be
+        # used for email header injection or log forging via the company field.
+        import re
+        self.company = re.sub(r"[\r\n\t\x00-\x1f\x7f]", " ", self.company).strip()[:200]
+
 
 class StartAuditResponse(BaseModel):
     job_id: str
@@ -26,6 +38,19 @@ class StartAuditResponse(BaseModel):
 
 @router.post("/start", response_model=StartAuditResponse)
 def start_audit(request: StartAuditRequest, db: Session = Depends(get_db)):
+    # Auto-expire stale PENDING jobs (consent never completed) older than 30 minutes
+    expiry_cutoff = datetime.now(timezone.utc) - timedelta(minutes=PENDING_JOB_EXPIRY_MINUTES)
+    stale = db.query(Job).filter(
+        Job.email == request.email,
+        Job.status == JobStatus.PENDING,
+        Job.created_at < expiry_cutoff,
+    ).all()
+    for job in stale:
+        job.status = JobStatus.FAILED
+        job.error_msg = "Consent not completed within 30 minutes — expired automatically."
+    if stale:
+        db.commit()
+
     # Rate limit: one active job per email
     existing = db.query(Job).filter(
         Job.email == request.email,

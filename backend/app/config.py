@@ -15,22 +15,24 @@ class Settings(BaseSettings):
     # OpenAI
     OPENAI_API_KEY: str = ""
 
-    # Email
-    SMTP_HOST: str = "smtp.office365.com"
-    SMTP_PORT: int = 587
-    SMTP_USER: str = ""
-    SMTP_PASSWORD: str = ""
-    EMAIL_FROM: str = ""
+    # Email (sent via Microsoft Graph API — no SMTP credentials needed)
+    EMAIL_FROM: str = ""          # e.g. m365-audit@encripti.com
     EMAIL_FROM_NAME: str = "Security Assessment Team"
 
+    # Admin — receives failure alerts and a CC copy of every client report
+    # Change this to your own address; clients will never see this address
+    ADMIN_EMAIL: str = "info@encripti.com"
+
     # Redis
-    REDIS_URL: str = "redis://localhost:6379/0"
+    REDIS_URL: str = "redis://redis:6379/0"
 
     # Database
-    DATABASE_URL: str = "sqlite:////app/data/audit.db"
+    DATABASE_URL: str = "postgresql://m365audit:changeme@postgres:5432/m365audit"
 
-    # Security
-    SECRET_KEY: str = "dev-secret-change-in-production"
+    # Security — no default; must be set in .env (generate with: openssl rand -hex 32)
+    SECRET_KEY: str
+    # Comma-separated list of allowed CORS origins, e.g. "https://app.example.com"
+    ALLOWED_ORIGINS: str = ""
 
     class Config:
         env_file = ".env"

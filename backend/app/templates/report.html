@@ -2,36 +2,254 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
+  <title>AI Automated Microsoft 365 Security Assessment</title>
   <style>
-    @page { size: A4; margin: 20mm 15mm 20mm 15mm; }
-    body { font-family: Arial, sans-serif; font-size: 10pt; color: #1a1a1a; }
-    h1 { font-size: 28pt; color: #003087; margin-bottom: 4px; }
-    h2 { font-size: 16pt; color: #003087; border-bottom: 2px solid #003087; padding-bottom: 4px; margin-top: 24px; }
-    h3 { font-size: 12pt; color: #1a1a1a; margin-top: 16px; }
-    h4 { font-size: 10pt; color: #555; margin-top: 12px; }
-    .cover { page-break-after: always; text-align: center; padding-top: 80px; }
-    .cover .company { font-size: 18pt; color: #444; margin-top: 16px; }
-    .cover .date { font-size: 11pt; color: #888; margin-top: 8px; }
-    .cover .confidential { margin-top: 40px; font-size: 9pt; color: #cc0000; font-weight: bold; }
+    /* ═══ PAGE SETUP ═══ */
+    @page {
+      size: A4;
+      margin: 22mm 18mm 24mm 18mm;
+      @bottom-left {
+        content: "AI Automated Microsoft 365 Security Assessment  |  CONFIDENTIAL";
+        font-family: Arial, sans-serif;
+        font-size: 7pt;
+        color: #9aa3b0;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 4pt;
+      }
+      @bottom-right {
+        content: "Page " counter(page);
+        font-family: Arial, sans-serif;
+        font-size: 7pt;
+        color: #9aa3b0;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 4pt;
+      }
+    }
+    @page :first {
+      margin: 0;
+      @bottom-left { content: none; }
+      @bottom-right { content: none; }
+    }
+
+    /* ═══ BASE ═══ */
+    * { box-sizing: border-box; }
+    body {
+      font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif;
+      font-size: 10pt;
+      color: #1a1a2e;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ═══ COVER PAGE ═══ */
+    .cover-page {
+      page-break-after: always;
+      width: 210mm;
+      min-height: 297mm;
+      background: #ffffff;
+    }
+    .cover-top-stripe { background: #1e3a5f; height: 14mm; width: 100%; }
+    .cover-accent-stripe { background: #0078d4; height: 2.5mm; width: 100%; }
+    .cover-content { padding: 18mm 20mm 0 20mm; }
+    .cover-eyebrow {
+      font-size: 8pt; letter-spacing: 3px; text-transform: uppercase;
+      color: #0078d4; font-weight: 700; margin-bottom: 8mm;
+    }
+    .cover-main-title {
+      font-size: 30pt; color: #1e3a5f; font-weight: 700;
+      line-height: 1.1; margin: 0 0 3mm 0;
+    }
+    .cover-sub-title {
+      font-size: 14pt; color: #4a6fa5; font-weight: 400; margin: 0 0 14mm 0;
+    }
+    .cover-rule { border: none; border-top: 1px solid #e2e8f0; margin: 0 0 12mm 0; }
+    .cover-prepared-label {
+      font-size: 7.5pt; text-transform: uppercase; letter-spacing: 2px;
+      color: #9aa3b0; margin-bottom: 3mm;
+    }
+    .cover-company-name { font-size: 22pt; color: #1e3a5f; font-weight: 700; margin: 0 0 5mm 0; }
+    .cover-date { font-size: 10pt; color: #555; }
+    .cover-footer-band {
+      background: #1e3a5f; padding: 7mm 20mm; margin-top: 68mm;
+    }
+    .cover-confidential-label {
+      color: #ffffff; font-size: 9pt; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 2mm;
+    }
+    .cover-disclaimer { color: rgba(255,255,255,0.55); font-size: 7.5pt; line-height: 1.4; }
+
+    /* ═══ SECTIONS ═══ */
     .section { page-break-before: always; }
-    table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 9pt; }
-    th { background: #003087; color: white; padding: 6px 8px; text-align: left; }
-    td { padding: 5px 8px; border-bottom: 1px solid #eee; }
-    tr:nth-child(even) td { background: #f8f9fc; }
-    pre, code { font-family: 'Courier New', monospace; font-size: 8.5pt; background: #f4f4f4; padding: 2px 4px; }
+
+    /* ═══ HEADINGS ═══ */
+    h1 { font-size: 18pt; color: #1e3a5f; margin: 0 0 4mm 0; line-height: 1.2; }
+    h2 {
+      font-size: 13pt; color: #1e3a5f; font-weight: 700;
+      border-bottom: 2.5px solid #0078d4; padding-bottom: 3px; margin: 0 0 5mm 0;
+    }
+    h3 { font-size: 10.5pt; color: #1e3a5f; font-weight: 700; margin: 6mm 0 2.5mm 0; }
+    h4 {
+      font-size: 10pt; color: #1e3a5f; font-weight: 700; margin: 4mm 0 1.5mm 0;
+      border-left: 3px solid #0078d4; padding-left: 6px;
+    }
+    p { margin: 0 0 3mm 0; }
+    ul, ol { margin: 2mm 0; padding-left: 6mm; }
+    li { margin-bottom: 1.5mm; }
+
+    /* ═══ TABLES ═══ */
+    table { width: 100%; border-collapse: collapse; margin: 3mm 0 5mm 0; font-size: 9pt; }
+    thead th {
+      background: #1e3a5f; color: #ffffff; padding: 6px 9px;
+      text-align: left; font-size: 8.5pt; font-weight: 600;
+    }
+    tbody td { padding: 5px 9px; border-bottom: 1px solid #eef0f5; vertical-align: top; }
+    tbody tr:nth-child(even) td { background: #f7f9fc; }
+
+    /* ═══ STAT SUMMARY BOXES ═══ */
+    .stat-row { display: table; width: 100%; margin: 4mm 0 6mm 0; border-spacing: 4mm; }
+    .stat-box { display: table-cell; text-align: center; padding: 5mm 3mm; border-radius: 5px; }
+    .stat-box-fail  { background: #fff0f0; border: 1px solid #ffcdd2; }
+    .stat-box-manual{ background: #fff8f0; border: 1px solid #ffe0b2; }
+    .stat-box-pass  { background: #f0fdf4; border: 1px solid #c8e6c9; }
+    .stat-number { font-size: 26pt; font-weight: 700; line-height: 1; display: block; margin-bottom: 1mm; }
+    .stat-label  { font-size: 7.5pt; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; display: block; }
+    .stat-number-fail   { color: #c62828; }
+    .stat-number-manual { color: #e65100; }
+    .stat-number-pass   { color: #2e7d32; }
+    .stat-label-fail    { color: #c62828; }
+    .stat-label-manual  { color: #e65100; }
+    .stat-label-pass    { color: #2e7d32; }
+
+    /* ═══ CHARTS ═══ */
+    .chart-grid { display: table; width: 100%; margin: 4mm 0; }
+    .chart-left  { display: table-cell; width: 52%; vertical-align: top; padding-right: 4mm; }
+    .chart-right { display: table-cell; width: 48%; vertical-align: top; }
+    .chart-card  {
+      border: 1px solid #e2e8f0; border-radius: 5px;
+      padding: 5mm; background: #ffffff;
+    }
+    .chart-card-title {
+      font-size: 8.5pt; font-weight: 700; color: #1e3a5f;
+      text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 4mm 0;
+    }
+    .donut-row   { display: table; width: 100%; }
+    .donut-cell  { display: table-cell; width: 165px; vertical-align: middle; }
+    .legend-cell { display: table-cell; vertical-align: middle; padding-left: 5mm; }
+    .legend-item { font-size: 8.5pt; color: #333; margin-bottom: 3mm; display: block; }
+    .legend-swatch {
+      display: inline-block; width: 10px; height: 10px;
+      border-radius: 2px; margin-right: 5px; vertical-align: middle;
+    }
+    .legend-count { font-weight: 700; font-size: 10pt; vertical-align: middle; }
+    .chart-legend-footer { margin-top: 4mm; font-size: 7.5pt; color: #9aa3b0; }
+    .chart-legend-footer span { margin-right: 8px; font-weight: 700; }
+
+    /* ═══ CODE ═══ */
+    code {
+      font-family: 'Courier New', Courier, monospace; font-size: 8pt;
+      background: #f4f6f9; padding: 1px 4px; border-radius: 2px; color: #1e3a5f;
+    }
+    pre {
+      font-family: 'Courier New', Courier, monospace; font-size: 8pt;
+      background: #f4f6f9; padding: 3mm 4mm; border-radius: 4px; overflow: hidden; margin: 2mm 0;
+    }
   </style>
-  <title>M365 Security Assessment</title>
 </head>
 <body>
-<div class="cover">
-  <h1>M365 Security Assessment</h1>
-  <div class="company">COMPANY_PLACEHOLDER</div>
-  <div class="date">DATE_PLACEHOLDER</div>
-  <div class="confidential">CONFIDENTIAL — For Authorized Recipients Only</div>
+
+<!-- ═══ COVER PAGE ═══ -->
+<div class="cover-page">
+  <div class="cover-top-stripe"></div>
+  <div class="cover-accent-stripe"></div>
+  <div class="cover-content">
+    <div class="cover-eyebrow">AI Automated Security Assessment</div>
+    <h1 class="cover-main-title">Microsoft 365<br>Security Report</h1>
+    <div class="cover-sub-title">Comprehensive Security Posture Review</div>
+    <hr class="cover-rule">
+    <div class="cover-prepared-label">Prepared for</div>
+    <div class="cover-company-name">COMPANY_PLACEHOLDER</div>
+    <div class="cover-date">DATE_PLACEHOLDER</div>
+  </div>
+  <div class="cover-footer-band">
+    <div class="cover-confidential-label">Confidential</div>
+    <div class="cover-disclaimer">
+      This document contains sensitive security findings about your Microsoft 365 environment
+      and is intended solely for authorized recipients. Do not distribute without authorization.
+    </div>
+  </div>
 </div>
+
+<!-- ═══ EXECUTIVE SUMMARY ═══ -->
 <div class="section">
-SYNTHESIS_PLACEHOLDER
+  <div class="stat-row">
+    <div class="stat-box stat-box-fail">
+      <span class="stat-number stat-number-fail">FAIL_COUNT</span>
+      <span class="stat-label stat-label-fail">Failed Controls</span>
+    </div>
+    <div class="stat-box stat-box-manual">
+      <span class="stat-number stat-number-manual">MANUAL_COUNT</span>
+      <span class="stat-label stat-label-manual">Manual Review</span>
+    </div>
+    <div class="stat-box stat-box-pass">
+      <span class="stat-number stat-number-pass">PASS_COUNT</span>
+      <span class="stat-label stat-label-pass">Controls Passing</span>
+    </div>
+  </div>
+  SYNTHESIS_PLACEHOLDER
 </div>
+
+<!-- ═══ RISK OVERVIEW CHARTS ═══ -->
+<div class="section">
+  <h2>Risk Overview</h2>
+
+  <!-- Donut chart card -->
+  <div class="chart-card" style="margin-bottom:6mm;">
+    <div class="chart-card-title">Overall Findings Distribution</div>
+    <div class="donut-row">
+      <div class="donut-cell">DONUT_CHART_PLACEHOLDER</div>
+      <div class="legend-cell">
+        <span class="legend-item">
+          <span class="legend-swatch" style="background:#c62828;"></span>
+          <span class="legend-count" style="color:#c62828;">FAIL_COUNT</span> Failed Controls
+        </span>
+        <span class="legend-item">
+          <span class="legend-swatch" style="background:#e65100;"></span>
+          <span class="legend-count" style="color:#e65100;">MANUAL_COUNT</span> Manual Review Required
+        </span>
+        <span class="legend-item">
+          <span class="legend-swatch" style="background:#2e7d32;"></span>
+          <span class="legend-count" style="color:#2e7d32;">PASS_COUNT</span> Controls Implemented
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Service bars card -->
+  <div class="chart-card" style="margin-bottom:6mm;">
+    <div class="chart-card-title">Findings by Service Area</div>
+    SERVICE_BARS_PLACEHOLDER
+    <div class="chart-legend-footer">
+      <span style="color:#c62828;">&#9632; Failed</span>
+      <span style="color:#e65100;">&#9632; Manual Review</span>
+      <span style="color:#2e7d32;">&#9632; Passing</span>
+    </div>
+  </div>
+
+  <!-- Manual review summary -->
+  <h3 style="color:#e65100;">Manual Review Required</h3>
+  <p style="font-size:8.5pt;color:#555;margin-bottom:3mm;">The following controls could not be automatically assessed and require administrator verification.</p>
+  MANUAL_TABLE_PLACEHOLDER
+
+  <!-- Passing controls summary -->
+  <h3 style="color:#2e7d32;">Controls Successfully Implemented</h3>
+  <p style="font-size:8.5pt;color:#555;margin-bottom:3mm;">The following controls are correctly configured in your Microsoft 365 environment.</p>
+  PASSING_TABLE_PLACEHOLDER
+
+</div>
+
+<!-- ═══ PER-SERVICE SECTIONS ═══ -->
 SERVICE_SECTIONS_PLACEHOLDER
+
 </body>
 </html>
