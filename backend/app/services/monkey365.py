@@ -1,22 +1,18 @@
 import json
 import logging
 import os
-import re
 import subprocess
 import tempfile
 from pathlib import Path
 from urllib.parse import urlparse
 
 from app.config import settings
-
-_UUID_RE = re.compile(
-    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I
-)
+from app.constants import UUID_RE
 
 
 def _validate_tenant_id(tenant_id: str) -> str:
     """Raise ValueError if tenant_id is not a valid UUID (prevents PS injection)."""
-    if not _UUID_RE.match(tenant_id):
+    if not UUID_RE.match(tenant_id):
         raise ValueError(f"Invalid tenant_id format: {tenant_id!r}")
     return tenant_id
 

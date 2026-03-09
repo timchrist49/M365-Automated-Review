@@ -5,13 +5,12 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.constants import UUID_RE
 from app.database import get_db
 from app.models import Job, JobStatus
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-
-UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I)
 
 
 def run_audit_task(job_id: str, tenant_id: str):

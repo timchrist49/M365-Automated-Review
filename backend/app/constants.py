@@ -2,6 +2,12 @@
 Shared constants used across multiple modules.
 Single source of truth — import from here, never redefine locally.
 """
+import re
+
+# UUID v4 validation regex — used in auth callback and monkey365 to prevent injection
+UUID_RE = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I
+)
 
 # Human-readable display names for each Monkey365 service key
 SERVICE_DISPLAY_NAMES: dict[str, str] = {

@@ -212,9 +212,12 @@ def render_html(company: str, analysis: dict, job_id: str) -> str:
 
 
 def generate_pdf(job_id: str, company: str, analysis: dict) -> str:
-    out_dir = f"/tmp/audit_jobs/{job_id}"
+    base = Path("/tmp/audit_jobs")
+    out_dir = (base / job_id).resolve()
+    if not str(out_dir).startswith(str(base.resolve())):
+        raise ValueError(f"Suspicious job_id rejected: {job_id!r}")
     os.makedirs(out_dir, exist_ok=True)
-    pdf_path = f"{out_dir}/report_{job_id}.pdf"
+    pdf_path = str(out_dir / f"report_{job_id}.pdf")
 
     html_content = render_html(company=company, analysis=analysis, job_id=job_id)
 

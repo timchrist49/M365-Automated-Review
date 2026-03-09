@@ -291,8 +291,12 @@ def analyze_findings(out_dir: str) -> dict:
         }
         for future in as_completed(future_to_service):
             service_name = future_to_service[future]
-            logger.info("Analyzed %s findings", service_name)
-            analyses[service_name] = future.result()
+            try:
+                analyses[service_name] = future.result()
+                logger.info("Analyzed %s findings", service_name)
+            except Exception as exc:
+                logger.error("OpenAI analysis failed for %s: %s", service_name, exc)
+                analyses[service_name] = f"*Analysis unavailable for this service: {exc}*"
 
     logger.info("Running synthesis analysis...")
     all_analyses = "\n\n---\n\n".join(

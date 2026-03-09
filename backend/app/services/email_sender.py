@@ -1,6 +1,7 @@
 import base64
 import logging
 import os
+from pathlib import Path
 
 import httpx
 
@@ -173,7 +174,7 @@ def send_report_email(to_email: str, company: str, pdf_path: str) -> None:
             f"Graph API sendMail failed: {response.status_code} {response.text}"
         )
 
-    # Clean up PDF after sending
-    if pdf_path and os.path.exists(pdf_path):
-        os.unlink(pdf_path)
+    # Clean up PDF after sending (missing_ok avoids TOCTOU race)
+    if pdf_path:
+        Path(pdf_path).unlink(missing_ok=True)
         logger.info("Cleaned up PDF: %s", pdf_path)

@@ -26,6 +26,8 @@ AUDIT_ROLES = {
     "SharePoint Administrator": "f28a1f50-f6e7-4571-818b-6a12f2af6b6c",
     "Teams Administrator": "69091246-20e8-4a56-aa4d-066075b2a7a8",
 }
+# Reverse map for O(1) role name lookup during cleanup
+_AUDIT_ROLES_BY_ID = {v: k for k, v in AUDIT_ROLES.items()}
 
 
 def _get_token_for_tenant(tenant_id: str) -> str:
@@ -208,9 +210,7 @@ def _revoke_admin_roles(tenant_id: str, sp_object_id: str, token: str) -> None:
                 headers=headers,
                 timeout=15,
             )
-            role_name = next(
-                (k for k, v in AUDIT_ROLES.items() if v == assignment.get("roleDefinitionId")), "unknown"
-            )
+            role_name = _AUDIT_ROLES_BY_ID.get(assignment.get("roleDefinitionId"), "unknown")
             if del_resp.status_code == 204:
                 logger.info("Removed %s role assignment from SP %s in tenant %s", role_name, sp_object_id, tenant_id)
                 removed += 1
