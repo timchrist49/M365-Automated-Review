@@ -17,8 +17,9 @@ openai==1.109.1
 weasyprint==68.1
 markdown==3.7  # converts Monkey365 findings markdown to HTML for WeasyPrint PDF
 
-# Email via Microsoft Graph API
+# Email via Microsoft Graph API + PKCS12 certificate loading (graph_admin.py)
 msal==1.31.0
+cryptography>=41.0  # msal transitive dep; listed explicitly because graph_admin.py imports it directly
 
 # Config
 pydantic-settings==2.5.2
